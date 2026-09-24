@@ -1,5 +1,7 @@
-package com.loan.collection.management.LoanCollectionManagement.model;
 
+        package com.loan.collection.management.LoanCollectionManagement.model;
+
+import com.loan.collection.management.LoanCollectionManagement.model.ApprovalStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -72,10 +74,7 @@ public class Customer {
     private User approvedBy;
 
     @Enumerated(EnumType.STRING)
-    @Column(
-            name = "status",
-            columnDefinition = "approval_status"
-    )
+    @Column(name = "status")
     private ApprovalStatus status;
 
     @Column(name = "created_at")
@@ -104,3 +103,4 @@ public class Customer {
         updatedAt = LocalDateTime.now();
     }
 }
+

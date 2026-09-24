@@ -1,5 +1,7 @@
-package com.loan.collection.management.LoanCollectionManagement.model;
 
+        package com.loan.collection.management.LoanCollectionManagement.model;
+
+import com.loan.collection.management.LoanCollectionManagement.model.LoanStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -73,10 +75,7 @@ public class Loan {
     private LocalDate actualSettlementDate;
 
     @Enumerated(EnumType.STRING)
-    @Column(
-            name = "status",
-            columnDefinition = "loan_status"
-    )
+    @Column(name = "status")
     private LoanStatus status;
 
     @Column(name = "created_at")
