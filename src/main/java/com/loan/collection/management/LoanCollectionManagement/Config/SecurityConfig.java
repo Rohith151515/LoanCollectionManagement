@@ -1,21 +1,53 @@
-
-        package com.loan.collection.management.LoanCollectionManagement.Config;
+package com.loan.collection.management.LoanCollectionManagement.Config;
 
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final UserDetailsService userDetailsService;
+    private final PasswordEncoder passwordEncoder;
+
+
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+
+        DaoAuthenticationProvider provider =
+                new DaoAuthenticationProvider(userDetailsService);
+
+        provider.setPasswordEncoder(passwordEncoder);
+
+        return provider;
+    }
+
+
+    @Bean
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration configuration
+    ) throws Exception {
+
+        return configuration.getAuthenticationManager();
+    }
+
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -24,113 +56,219 @@ public class SecurityConfig {
 
         http
 
-                // REST API - disable CSRF
+                // ============================================
+                // CSRF
+                // ============================================
+
                 .csrf(csrf -> csrf.disable())
 
-                // Disable CORS here if you are not configuring
-                // Spring Security CORS separately
-                .cors(cors -> cors.disable())
 
-                // Disable browser login
-                .formLogin(form -> form.disable())
+                // ============================================
+                // SESSION
+                // ============================================
 
-                // Disable HTTP Basic authentication
-                .httpBasic(basic -> basic.disable())
-
-                // Disable logout endpoint
-                .logout(logout -> logout.disable())
-
-                // JWT authentication is stateless
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
 
-                .authorizeHttpRequests(auth -> auth
 
-                        // =================================================
-                        // PUBLIC APIs
-                        // =================================================
+                // ============================================
+                // AUTHENTICATION PROVIDER
+                // ============================================
 
-                        .requestMatchers(
-                                "/api/v1/auth/register",
-                                "/api/v1/auth/login"
-                        ).permitAll()
-
-
-                        // =================================================
-                        // CASHIER APIs
-                        // =================================================
-
-                        // Admin can access cashier APIs
-                        .requestMatchers(
-                                "/api/v1/cashiers/**"
-                        ).hasRole("ADMIN")
-
-
-                        // =================================================
-                        // CUSTOMER APIs
-                        // =================================================
-
-                        // CASHIER + ADMIN can create customers
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/v1/customers"
-                        ).hasAnyRole("ADMIN", "CASHIER")
-
-
-                        // CASHIER + ADMIN can view customers
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/v1/customers/**"
-                        ).hasAnyRole("ADMIN", "CASHIER")
-
-
-                        // CASHIER + ADMIN can update customers
-                        .requestMatchers(
-                                HttpMethod.PUT,
-                                "/api/v1/customers/**"
-                        ).hasAnyRole("ADMIN", "CASHIER")
-
-
-                        // Only ADMIN can approve/reject customers
-                        .requestMatchers(
-                                HttpMethod.PATCH,
-                                "/api/v1/customers/*/approval"
-                        ).hasRole("ADMIN")
-
-
-                        // Only ADMIN can delete customers
-                        .requestMatchers(
-                                HttpMethod.DELETE,
-                                "/api/v1/customers/**"
-                        ).hasRole("ADMIN")
-
-
-                        // =================================================
-                        // USER APIs
-                        // =================================================
-
-                        .requestMatchers(
-                                "/api/v1/users/**"
-                        ).authenticated()
-
-
-                        // =================================================
-                        // EVERYTHING ELSE
-                        // =================================================
-
-                        .anyRequest().authenticated()
+                .authenticationProvider(
+                        authenticationProvider()
                 )
 
-                // JWT filter
+
+                // ============================================
+                // AUTHORIZATION
+                // ============================================
+
+                .authorizeHttpRequests(auth -> auth
+
+                        // ------------------------------------
+                        // AUTH APIs
+                        // ------------------------------------
+
+                        .requestMatchers(
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/register"
+                        )
+                        .permitAll()
+
+
+                        // ------------------------------------
+                        // USER APIs
+                        // TEMPORARY TEST
+                        // ------------------------------------
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/users",
+                                "/api/v1/users/**"
+                        )
+                        .permitAll()
+
+
+                        // ------------------------------------
+                        // USER APIs - POST
+                        // ADMIN / SUPER_ADMIN
+                        // ------------------------------------
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/v1/users",
+                                "/api/v1/users/**"
+                        )
+                        .hasAnyRole(
+                                "ADMIN",
+                                "SUPER_ADMIN"
+                        )
+
+
+                        // ------------------------------------
+                        // USER APIs - PUT
+                        // ADMIN / SUPER_ADMIN
+                        // ------------------------------------
+
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/v1/users/**"
+                        )
+                        .hasAnyRole(
+                                "ADMIN",
+                                "SUPER_ADMIN"
+                        )
+
+
+                        // ------------------------------------
+                        // USER APIs - PATCH
+                        // ADMIN / SUPER_ADMIN
+                        // ------------------------------------
+
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/v1/users/**"
+                        )
+                        .hasAnyRole(
+                                "ADMIN",
+                                "SUPER_ADMIN"
+                        )
+
+
+                        // ------------------------------------
+                        // USER APIs - DELETE
+                        // ADMIN / SUPER_ADMIN
+                        // ------------------------------------
+
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/v1/users/**"
+                        )
+                        .hasAnyRole(
+                                "ADMIN",
+                                "SUPER_ADMIN"
+                        )
+
+
+                        // ------------------------------------
+                        // CASHIER APIs - GET
+                        // ADMIN / SUPER_ADMIN
+                        // ------------------------------------
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/cashiers",
+                                "/api/v1/cashiers/**"
+                        )
+                        .hasAnyRole(
+                                "ADMIN",
+                                "SUPER_ADMIN"
+                        )
+
+
+                        // ------------------------------------
+                        // CASHIER APIs - POST
+                        // ADMIN / SUPER_ADMIN
+                        // ------------------------------------
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/v1/cashiers"
+                        )
+                        .hasAnyRole(
+                                "ADMIN",
+                                "SUPER_ADMIN"
+                        )
+
+
+                        // ------------------------------------
+                        // CASHIER APIs - PUT
+                        // ADMIN / SUPER_ADMIN
+                        // ------------------------------------
+
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/v1/cashiers/**"
+                        )
+                        .hasAnyRole(
+                                "ADMIN",
+                                "SUPER_ADMIN"
+                        )
+
+
+                        // ------------------------------------
+                        // CASHIER APIs - PATCH
+                        // ADMIN / SUPER_ADMIN
+                        // ------------------------------------
+
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/v1/cashiers/**"
+                        )
+                        .hasAnyRole(
+                                "ADMIN",
+                                "SUPER_ADMIN"
+                        )
+
+
+                        // ------------------------------------
+                        // CASHIER APIs - DELETE
+                        // ADMIN / SUPER_ADMIN
+                        // ------------------------------------
+
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/v1/cashiers/**"
+                        )
+                        .hasAnyRole(
+                                "ADMIN",
+                                "SUPER_ADMIN"
+                        )
+
+
+                        // ------------------------------------
+                        // EVERYTHING ELSE
+                        // ------------------------------------
+
+                        .anyRequest()
+                        .authenticated()
+                )
+
+
+                // ============================================
+                // JWT FILTER
+                // ============================================
+
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 );
 
+
         return http.build();
     }
 }
-

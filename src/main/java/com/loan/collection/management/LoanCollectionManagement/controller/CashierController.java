@@ -1,18 +1,16 @@
 package com.loan.collection.management.LoanCollectionManagement.controller;
 
-import com.loan.collection.management.LoanCollectionManagement.dto.CashierApprovalRequest;
-import com.loan.collection.management.LoanCollectionManagement.dto.CashierRequest;
-import com.loan.collection.management.LoanCollectionManagement.dto.CashierResponse;
+import com.loan.collection.management.LoanCollectionManagement.dto.*;
 import com.loan.collection.management.LoanCollectionManagement.service.CashierService;
 
 import jakarta.validation.Valid;
-
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,8 +21,12 @@ public class CashierController {
 
     private final CashierService cashierService;
 
+    // ============================================================
+    // CREATE CASHIER
+    // ============================================================
+
     @PostMapping
-    public ResponseEntity<CashierResponse> createCashier(
+    public ResponseEntity<ApiResponse<CashierResponse>> createCashier(
             @Valid @RequestBody CashierRequest request
     ) {
 
@@ -33,66 +35,142 @@ public class CashierController {
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(response);
+                .body(new ApiResponse<>(
+                        true,
+                        "Cashier created successfully",
+                        response,
+                        LocalDateTime.now()
+                ));
     }
 
+    // ============================================================
+    // GET ALL CASHIERS
+    // ============================================================
+
     @GetMapping
-    public ResponseEntity<List<CashierResponse>> getAllCashiers() {
+    public ResponseEntity<ApiResponse<List<CashierResponse>>> getAllCashiers() {
+
+        List<CashierResponse> cashiers =
+                cashierService.getAllCashiers();
 
         return ResponseEntity.ok(
-                cashierService.getAllCashiers()
+                new ApiResponse<>(
+                        true,
+                        "Cashiers retrieved successfully",
+                        cashiers,
+                        LocalDateTime.now()
+                )
         );
     }
 
+    // ============================================================
+    // GET CASHIER BY ID
+    // ============================================================
+
     @GetMapping("/{id}")
-    public ResponseEntity<CashierResponse> getCashierById(
+    public ResponseEntity<ApiResponse<CashierResponse>> getCashierById(
             @PathVariable UUID id
     ) {
 
+        CashierResponse response =
+                cashierService.getCashierById(id);
+
         return ResponseEntity.ok(
-                cashierService.getCashierById(id)
+                new ApiResponse<>(
+                        true,
+                        "Cashier retrieved successfully",
+                        response,
+                        LocalDateTime.now()
+                )
         );
     }
 
+    // ============================================================
+    // GET CASHIER BY USER ID
+    // ============================================================
+
     @GetMapping("/user/{userId}")
-    public ResponseEntity<CashierResponse> getCashierByUserId(
+    public ResponseEntity<ApiResponse<CashierResponse>> getCashierByUserId(
             @PathVariable UUID userId
     ) {
 
+        CashierResponse response =
+                cashierService.getCashierByUserId(userId);
+
         return ResponseEntity.ok(
-                cashierService.getCashierByUserId(userId)
+                new ApiResponse<>(
+                        true,
+                        "Cashier retrieved successfully",
+                        response,
+                        LocalDateTime.now()
+                )
         );
     }
 
+    // ============================================================
+    // UPDATE CASHIER
+    // ============================================================
+
     @PutMapping("/{id}")
-    public ResponseEntity<CashierResponse> updateCashier(
+    public ResponseEntity<ApiResponse<CashierResponse>> updateCashier(
             @PathVariable UUID id,
             @Valid @RequestBody CashierRequest request
     ) {
 
+        CashierResponse response =
+                cashierService.updateCashier(id, request);
+
         return ResponseEntity.ok(
-                cashierService.updateCashier(id, request)
+                new ApiResponse<>(
+                        true,
+                        "Cashier updated successfully",
+                        response,
+                        LocalDateTime.now()
+                )
         );
     }
 
+    // ============================================================
+    // APPROVE CASHIER
+    // ============================================================
+
     @PatchMapping("/{id}/approve")
-    public ResponseEntity<CashierResponse> approveCashier(
+    public ResponseEntity<ApiResponse<CashierResponse>> approveCashier(
             @PathVariable UUID id,
             @Valid @RequestBody CashierApprovalRequest request
     ) {
 
+        CashierResponse response =
+                cashierService.approveCashier(id, request);
+
         return ResponseEntity.ok(
-                cashierService.approveCashier(id, request)
+                new ApiResponse<>(
+                        true,
+                        "Cashier approved successfully",
+                        response,
+                        LocalDateTime.now()
+                )
         );
     }
 
+    // ============================================================
+    // DELETE CASHIER
+    // ============================================================
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCashier(
+    public ResponseEntity<ApiResponse<Void>> deleteCashier(
             @PathVariable UUID id
     ) {
 
         cashierService.deleteCashier(id);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(
+                new ApiResponse<>(
+                        true,
+                        "Cashier deleted successfully",
+                        null,
+                        LocalDateTime.now()
+                )
+        );
     }
 }
